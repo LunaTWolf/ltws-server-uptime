@@ -2,6 +2,8 @@
 
 Minimal Node.js status site that serves a static frontend and probes servers/services.
 
+[![Main Branch](https://github.com/LunaTWolf/ltws-server-uptime/actions/workflows/node.js.yml/badge.svg)](https://github.com/LunaTWolf/ltws-server-uptime/actions/workflows/node.js.yml)
+
 Quick start
 - Install dependencies: `npm install`
 - Start: `npm start` (runs `node index.js`)
