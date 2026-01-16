@@ -34,12 +34,13 @@ Example
 	"Servers": [
 		{
 			"Server Name": "LTW1",
+			"Web Link": "",
 			"IP": "192.168.0.92",
 			"HideIP": false,
 			"HidePorts": false,
 			"OneServiceOnly": false,
 			"QueryPort": 0,
-			"Services": [ { "Service Name": "Web", "Port": 80 } ]
+			"Services": [ { "Service Name": "Web", "Web Link": "https://192.168.0.92/", "Port": 80 } ]
 		}
 	]
 }
