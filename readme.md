@@ -1,6 +1,7 @@
 # LunaTW's Server Uptime Site
 
 Minimal Node.js status site that serves a static frontend and probes servers/services.
+[![Node.js CI](https://github.com/LunaTWolf/ltws-server-uptime/actions/workflows/node.js.yml/badge.svg)](https://github.com/LunaTWolf/ltws-server-uptime/actions/workflows/node.js.yml)
 
 Quick start
 - Install dependencies: `npm install`
