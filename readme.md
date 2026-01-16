@@ -6,27 +6,17 @@ Quick start
 - Install dependencies: `npm install`
 - Start: `npm start` (runs `node index.js`)
 
-Features
-- Serves static UI from `public/` with a responsive, card-style list layout.
-- Dynamic title from `config.json` (frontend fetches `/config.json`).
-- Health endpoint: `/health` (returns JSON { status, uptime }).
-- Serves `servers.json` to the frontend at `/servers.json`.
-- TCP probe endpoint: `/probe?host=IP&port=PORT` — attempts TCP connect and optionally fetches `/health` on HTTP ports.
-- Server probe endpoint: `/probe-server?host=IP` or `/probe-server?name=ServerName` — checks configured ports and common fallbacks.
-- Service probe by name: `/probe-service?name=ServerName&port=PORT` — probe a service without exposing server IP to the client.
-- `QueryPort` support: if a server entry has `QueryPort` > 0, server-level probes use that single port.
-- In-memory `lastUptime` cache when remote `/health` reports `uptime`.
+What this site does for you
+- Shows a clean dashboard listing your servers and the services running on them.
+- Lets you see at a glance which services are online or offline, with clear colored badges.
+- Keeps sensitive details private: you can hide IP addresses and ports from the public view.
+- Lets you focus on a single important service per server if you prefer a simplified view.
+- Uses a simple config file so you can add or remove servers and services easily.
 
-Servers configuration (servers.json)
-- Each server entry supports:
-	- `Server Name`: display name
-	- `IP`: numeric or host address (used for probing)
-	- `Services`: array of services with `Service Name` and `Port`
-	- `Port`: top-level port (optional)
-	- `HideIP`: true/false — hide IP in UI and avoid exposing it to client probes
-	- `HidePorts`: true/false — hide port numbers in the UI
-	- `OneServiceOnly`: true/false — show only a single service/port for the server
-	- `QueryPort`: number — when >0, used as the authoritative port for server-level checks
+How servers are defined (servers.json)
+- Each server has a name and an address; you can list the services (and ports) to monitor.
+- Optional flags let you hide the IP, hide ports, show only one service, or set a specific port to use when checking the server.
+
 
 Frontend behavior
 - Lists servers one per row, services stacked top-to-bottom inside each server row.
