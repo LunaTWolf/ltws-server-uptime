@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LTWS - Uptime</title>
+    <style>
+      :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#6ee7b7;--danger:#ff6b6b}
+      html,body{height:100%;margin:0}
+      body{font-family:Inter,system-ui,Segoe UI,Roboto,-apple-system;background:linear-gradient(180deg,#071028 0%, #071a2b 60%);color:#e6eef6;padding:24px}
+      header{max-width:1100px;margin:0 auto 16px}
+      h1{margin:0 0 12px;font-weight:600}
+      /* list style: one server per row */
+      #servers{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+      .server{background:radial-gradient(1200px 600px at 10% 10%, rgba(255,255,255,0.02), transparent 10%), var(--card);border-radius:10px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}
+      .server h2{font-size:1.05rem;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+      .server h2 span{font-weight:600}
+      .status, .server .badge {margin-left:8px;font-size:0.9rem;padding:4px 8px;border-radius:999px;display:inline-block;min-width:68px;text-align:center}
+      .services-list{margin:0;padding:0}
+      .service-box{display:flex;align-items:flex-start;justify-content:space-between;padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border:1px solid rgba(255,255,255,0.02);width:100%}
+      .service-box + .service-box{margin-top:8px}
+      .service-left{display:flex;flex-direction:column;gap:4px}
+      .service-left .service-name{font-weight:600}
+      .service-left .muted{color:var(--muted);font-size:0.95rem}
+      .service-box .badge{min-width:72px;padding:6px 10px;font-size:0.85rem}
+      .status{background:transparent;color:var(--muted);transition:color .15s,background .15s}
+      .server .badge.checking{background:#1f2a3a;color:var(--muted)}
+      .server .badge.online{background:rgba(110,231,183,0.12);color:var(--accent);border:1px solid rgba(110,231,183,0.12)}
+      .server .badge.offline{background:rgba(255,107,107,0.06);color:var(--danger);border:1px solid rgba(255,107,107,0.06)}
+      ul{margin:0;padding:0 0 0 14px}
+      li{margin:8px 0;display:flex;justify-content:space-between;align-items:center}
+      .service-name{color:#d7e6f6}
+      .muted{color:var(--muted);font-size:0.95rem}
+      a{color:var(--accent)}
+      @media (max-width:520px){body{padding:12px} .server{padding:10px}}
+    </style>
+  </head>
+  <body>
+    <h1 id="site-title">LTWS — Server Uptime</h1>
+
+    <div id="servers"></div>
+
+    <script>
+      // Apply runtime config title
+      fetch('/config.json').then(function(res){
+        if(!res.ok) throw new Error('no config');
+        return res.json();
+      }).then(function(cfg){
+        var title = cfg && cfg.title ? cfg.title : document.title;
+        document.title = title;
+        var h = document.getElementById('site-title');
+        if(h) h.textContent = title;
+      }).catch(function(){ /* ignore */ });
+
+      // Utility to create elements
+      function el(tag, props, children) {
+        var e = document.createElement(tag);
+        if (props) Object.keys(props).forEach(function(k){ e[k]=props[k]; });
+        (children||[]).forEach(function(c){ e.appendChild(typeof c==='string'? document.createTextNode(c): c); });
+        return e;
+      }
+
+      // Render servers list and probe each service
+      fetch('/servers.json').then(function(res){ return res.json(); }).then(function(data){
+        var container = document.getElementById('servers');
+        container.innerHTML = '';
+        var list = Array.isArray(data.Servers) ? data.Servers : [];
+        list.forEach(function(s, idx){
+          var srv = el('div', { className: 'server' });
+          var title = s['Server Name'] || s.name || ('Server ' + (idx+1));
+          // server status placeholder
+          var header = el('h2');
+          // store server name and (optionally) host IP on the header for reliable lookup later
+          var hostVal = (s.IP || s.ip || 'unknown');
+          // if OneServiceOnly and ports are visible, append the single port to the displayed host
+          var displayHost = hostVal;
+          if (s.OneServiceOnly) {
+            var onePort = s.Port || (Array.isArray(s.Services) && s.Services[0] && s.Services[0].Port);
+            if (onePort && !s.HidePorts && hostVal && hostVal !== 'unknown') displayHost = hostVal + ':' + onePort;
+          }
+          header.dataset.name = title;
+          if (!s.HideIP) header.dataset.host = hostVal;
+          // display header text: include IP (or ip:port) only when not hidden
+          header.appendChild(document.createTextNode(title + (s.HideIP ? '' : ' (' + displayHost + ')')));
+          var serverStatus = el('span', { id: 'server-status-' + idx, className: 'badge checking', style: 'margin-left:8px' }, ['checking']);
+          header.appendChild(serverStatus);
+          srv.appendChild(header);
+
+          var svcList = el('ul');
+          var services = [];
+          if (s.OneServiceOnly) {
+            var onePort = s.Port || (Array.isArray(s.Services) && s.Services[0] && s.Services[0].Port);
+            if (onePort) services = [{ 'Service Name': title, 'Port': onePort }];
+          } else {
+            if (Array.isArray(s.Services)) services = s.Services;
+            else if (s.Port) services = [{ 'Service Name': 'port', 'Port': s.Port }];
+          }
+
+          // Render services as boxed rows with left-side data and top-right status
+          services.forEach(function(svc, sidx){
+            var svcName = svc['Service Name'] || svc.name || ('port ' + svc.Port);
+            var port = svc.Port || svc.port;
+            var li = el('li');
+            var box = el('div', { className: 'service-box' });
+
+            var left = el('div', { className: 'service-left' });
+            left.appendChild(el('div', { className: 'service-name' }, [svcName]));
+            if (!s.HideIP) {
+              var hostEl = el('div', { className: 'muted' }, [hostVal]);
+              if (!s.HidePorts && port && hostVal && hostVal !== 'unknown') hostEl.title = hostVal + ':' + port;
+              left.appendChild(hostEl);
+            } else if (!s.HidePorts && port) {
+              // IP is hidden but ports are visible: show 'Hidden' and tooltip 'Hidden:port'
+              var hostEl = el('div', { className: 'muted', title: 'Hidden:' + port }, ['Hidden']);
+              left.appendChild(hostEl);
+            }
+
+            var badge = el('span', { className: 'badge checking', id: 'status-' + idx + '-' + sidx }, ['checking']);
+            box.appendChild(left);
+            box.appendChild(badge);
+            li.appendChild(box);
+            svcList.appendChild(li);
+
+            // Probe via server-side endpoint. If IP is hidden, use name-based probe to avoid exposing IP.
+            if (port) {
+              var probeUrl;
+              if (s.HideIP) probeUrl = '/probe-service?name=' + encodeURIComponent(title) + '&port=' + encodeURIComponent(port);
+              else probeUrl = '/probe?host=' + encodeURIComponent(s.IP) + '&port=' + encodeURIComponent(port);
+
+              fetch(probeUrl).then(function(r){ return r.json(); }).then(function(j){
+                var st = document.getElementById('status-' + idx + '-' + sidx);
+                if (j && j.ok) { st.textContent = 'online'; st.className = 'badge online'; }
+                else { st.textContent = 'offline'; st.className = 'badge offline'; }
+              }).catch(function(){
+                var st = document.getElementById('status-' + idx + '-' + sidx);
+                st.textContent = 'offline'; st.className = 'badge offline';
+              });
+            } else {
+              var st = document.getElementById('status-' + idx + '-' + sidx);
+              st.textContent = 'unknown'; st.className = 'badge checking';
+            }
+          });
+
+          if (!s.OneServiceOnly) srv.appendChild(svcList);
+          container.appendChild(srv);
+        });
+      
+        // After rendering, probe server-level online status for each server
+        (function(){
+          var serverDivs = document.querySelectorAll('#servers .server');
+          serverDivs.forEach(function(d, idx){
+            var h2 = d.querySelector('h2');
+            var host = h2 && h2.dataset ? h2.dataset.host : null;
+            var name = h2 && h2.dataset ? h2.dataset.name : null;
+            var elStatus = document.getElementById('server-status-' + idx);
+            if (!host && !name) { if (elStatus) { elStatus.textContent = 'unknown'; elStatus.className = 'badge checking'; } return; }
+            var probeUrl = name ? ('/probe-server?name=' + encodeURIComponent(name)) : ('/probe-server?host=' + encodeURIComponent(host));
+            fetch(probeUrl).then(function(r){ return r.json(); }).then(function(j){
+                if (j && j.ok) { elStatus.textContent = 'online'; elStatus.className = 'badge online'; }
+                else { elStatus.textContent = 'offline'; elStatus.className = 'badge offline'; }
+              }).catch(function(){ if (elStatus) { elStatus.textContent = 'offline'; elStatus.className = 'badge offline'; } });
+          });
+        })();
+
+      }).catch(function(){ document.getElementById('servers').textContent = 'Failed to load servers.json'; });
+    </script>
+  </body>
+</html>
