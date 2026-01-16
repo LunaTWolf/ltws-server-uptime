@@ -2,6 +2,7 @@
     "Servers": [
         {
             "Server Name": "LTW0",
+            "Web Link": "",
             "IP": "209.204.193.204",
             "QueryPort": 0,
             "HideIP": true,
@@ -10,12 +11,14 @@
             "Services": [
                 {
                     "Service Name": "Plex Server",
+                    "Web Link": "",
                     "Port": 32400
                 }
             ]
         },
         {
             "Server Name": "LTW1",
+            "Web Link": "",
             "IP": "192.168.0.92",
             "QueryPort": 0,
             "HideIP": false,
@@ -24,16 +27,19 @@
             "Services": [
                 {
                     "Service Name": "MCTS Alerts Bot",
+                    "Web Link": "",
                     "Port": 5000
                 },
                 {
                     "Service Name": "Pi-Hole Web",
+                    "Web Link": "",
                     "Port": 80
                 }
             ]
         },
         {
             "Server Name": "LTW2",
+            "Web Link": "",
             "IP": "0.0.0.0",
             "QueryPort": 0,
             "HideIP": false,
@@ -42,12 +48,14 @@
             "Services": [
                 {
                     "Service Name": "LTWS Server Uptime",
+                    "Web Link": "",
                     "Port": 8080
                 }
             ]
         },
         {
             "Server Name": "Pi-Hole",
+            "Web Link": "",
             "IP": "192.168.0.92",
             "QueryPort": 0,
             "HideIP": false,
