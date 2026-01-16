@@ -1,4 +1,4 @@
-const version = "1.0.0";
+const version = "v1.0.0";
 
 const express = require('express');
 const path = require('path');
